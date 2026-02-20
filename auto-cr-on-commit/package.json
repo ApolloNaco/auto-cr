@@ -1,0 +1,124 @@
+{
+  "name": "auto-cr-on-commit",
+  "displayName": "Auto CR on Commit",
+  "description": "在 commit 或 merge 后自动触发 Cursor Agent 代码审查",
+  "version": "1.0.0",
+  "publisher": "auto-cr",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other"],
+  "activationEvents": ["workspaceContains:.git"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "Auto CR",
+      "properties": {
+        "autoCR.onCommit.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "是否在每次 commit 后自动触发 CR"
+        },
+        "autoCR.onCommit.command": {
+          "type": "string",
+          "default": "/review [commit-hash] -o --dir [outputDir]",
+          "description": "commit 触发时执行的审查命令模板。占位符: [commit-hash], [outputDir]"
+        },
+        "autoCR.onCommit.templatePath": {
+          "type": "string",
+          "default": "",
+          "description": "commit 触发时使用的 CR 模板路径，空则使用 .cursor/commands/review.md"
+        },
+        "autoCR.onMerge.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "是否在 merge 到 master/main 时自动触发 CR"
+        },
+        "autoCR.onMerge.command": {
+          "type": "string",
+          "default": "/review --b [branch] -o --dir [outputDir]",
+          "description": "merge 触发时执行的审查命令模板。占位符: [branch], [outputDir]"
+        },
+        "autoCR.onMerge.templatePath": {
+          "type": "string",
+          "default": "",
+          "description": "merge 触发时使用的 CR 模板路径"
+        },
+        "autoCR.autoSubmit": {
+          "type": "boolean",
+          "default": true,
+          "description": "是否自动发送审查命令（false 时只粘贴）"
+        },
+        "autoCR.pollIntervalMs": {
+          "type": "number",
+          "default": 2000,
+          "description": "标记文件轮询间隔（毫秒）"
+        },
+        "autoCR.minChangedLines": {
+          "type": "number",
+          "default": 20,
+          "description": "触发审查的最小变更行数阈值（仅 commit 触发）"
+        },
+        "autoCR.confirmBeforeReview": {
+          "type": "boolean",
+          "default": true,
+          "description": "触发审查前是否弹窗确认"
+        },
+        "autoCR.reportOutputDir": {
+          "type": "string",
+          "default": "Ai/review-reports",
+          "description": "审查报告输出目录"
+        },
+        "autoCR.extraContext": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "enum": ["text", "directory", "url"] },
+              "value": { "type": "string" }
+            }
+          },
+          "default": [],
+          "description": "用户自定义 CR 上下文"
+        },
+        "autoCR.notifyOnComplete": {
+          "type": ["string", "boolean"],
+          "enum": ["always", "criticalOnly"],
+          "default": "always",
+          "description": "审查完成后的通知模式: always | criticalOnly。执行错误始终弹通知"
+        },
+        "autoCR.excludeExtensions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [".md", ".txt", ".json", ".yaml", ".yml", ".gradle", ".png", ".jpg", ".svg", ".ico", ".sh", ".bat"],
+          "description": "不需要 CR 的文件后缀列表"
+        },
+        "autoCR.excludePaths": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": ["src/test/", "src/androidTest/", "test/", "tests/", "__tests__/", "build/", "node_modules/"],
+          "description": "不需要 CR 的目录路径前缀列表"
+        },
+        "autoCR.excludeTestFiles": {
+          "type": "boolean",
+          "default": true,
+          "description": "是否自动排除单元测试文件"
+        }
+      }
+    },
+    "commands": [
+      { "command": "autoCR.toggleSettingsMenu", "title": "Auto CR: Toggle Settings Menu" },
+      { "command": "autoCR.toggleCommitMode", "title": "Auto CR: Toggle Commit Auto Mode" },
+      { "command": "autoCR.toggleMergeMode", "title": "Auto CR: Toggle Merge Auto Mode" },
+      { "command": "autoCR.triggerReviewNow", "title": "Auto CR: Trigger Review Now" },
+      { "command": "autoCR.selectReviewTemplate", "title": "Auto CR: Select Review Template" }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "watch": "tsc -p . -w"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.0.0"
+  }
+}
