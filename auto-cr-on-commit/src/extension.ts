@@ -33,19 +33,19 @@ function isGitRepo(root: string): boolean {
 }
 
 export function activate(context: vscode.ExtensionContext): void {
-  const out = vscode.window.createOutputChannel("Auto CR");
+  const out = vscode.window.createOutputChannel("AutoCR");
   setOutputChannel(out);
 
   if (!isGitAvailable()) {
     showError(
-      "Auto CR 需要 Git 支持，请先安装 Git（https://git-scm.com）后重启 Cursor"
+      "AutoCR 需要 Git 支持，请先安装 Git（https://git-scm.com）后重启 Cursor"
     );
     return;
   }
 
   const workspaceRoot = getWorkspaceRoot();
   if (!workspaceRoot || !isGitRepo(workspaceRoot)) {
-    out.appendLine("当前工作区非 Git 项目，Auto CR 已禁用");
+    out.appendLine("当前工作区非 Git 项目，AutoCR 已禁用");
     return;
   }
 

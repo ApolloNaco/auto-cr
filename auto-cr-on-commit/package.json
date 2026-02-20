@@ -1,16 +1,22 @@
 {
-  "name": "auto-cr-on-commit",
-  "displayName": "Auto CR on Commit",
-  "description": "在 commit 或 merge 后自动触发 Cursor Agent 代码审查",
+  "name": "auto-cr",
+  "displayName": "AutoCR",
+  "description": "在 Git commit 或 merge 后自动触发 Cursor Agent 代码审查，支持自定义模板与排除规则，审查报告输出到指定目录",
   "version": "1.0.0",
-  "publisher": "auto-cr",
+  "publisher": "ApolloNaco",
+  "author": { "name": "ApolloNaco", "url": "https://github.com/ApolloNaco" },
+  "icon": "icon.png",
+  "keywords": ["cursor", "code review", "auto review", "git", "commit", "merge", "agent"],
+  "repository": { "type": "git", "url": "https://github.com/auto-cr/auto-cr" },
+  "license": "MIT",
+  "galleryBanner": { "color": "#2D7D46", "theme": "dark" },
   "engines": { "vscode": "^1.85.0" },
-  "categories": ["Other"],
+  "categories": ["Other", "Code Review", "Testing"],
   "activationEvents": ["workspaceContains:.git"],
   "main": "./out/extension.js",
   "contributes": {
     "configuration": {
-      "title": "Auto CR",
+      "title": "AutoCR",
       "properties": {
         "autoCR.onCommit.enabled": {
           "type": "boolean",
@@ -105,11 +111,11 @@
       }
     },
     "commands": [
-      { "command": "autoCR.toggleSettingsMenu", "title": "Auto CR: Toggle Settings Menu" },
-      { "command": "autoCR.toggleCommitMode", "title": "Auto CR: Toggle Commit Auto Mode" },
-      { "command": "autoCR.toggleMergeMode", "title": "Auto CR: Toggle Merge Auto Mode" },
-      { "command": "autoCR.triggerReviewNow", "title": "Auto CR: Trigger Review Now" },
-      { "command": "autoCR.selectReviewTemplate", "title": "Auto CR: Select Review Template" }
+      { "command": "autoCR.toggleSettingsMenu", "title": "AutoCR: Toggle Settings Menu" },
+      { "command": "autoCR.toggleCommitMode", "title": "AutoCR: Toggle Commit Auto Mode" },
+      { "command": "autoCR.toggleMergeMode", "title": "AutoCR: Toggle Merge Auto Mode" },
+      { "command": "autoCR.triggerReviewNow", "title": "AutoCR: Trigger Review Now" },
+      { "command": "autoCR.selectReviewTemplate", "title": "AutoCR: Select Review Template" }
     ]
   },
   "scripts": {

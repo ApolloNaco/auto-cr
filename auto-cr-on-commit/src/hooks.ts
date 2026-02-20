@@ -60,7 +60,7 @@ export function installPostCommitHook(workspaceRoot: string, log: (msg: string) 
     if (fs.existsSync(hookPath)) {
       content = fs.readFileSync(hookPath, "utf8");
       if (hasPostCommitHookContent(content)) {
-        log("post-commit hook 已包含 Auto CR 逻辑，跳过");
+        log("post-commit hook 已包含 AutoCR 逻辑，跳过");
         return true;
       }
     } else {
@@ -85,7 +85,7 @@ export function installPostMergeHook(workspaceRoot: string, log: (msg: string) =
     if (fs.existsSync(hookPath)) {
       content = fs.readFileSync(hookPath, "utf8");
       if (hasPostMergeHookContent(content)) {
-        log("post-merge hook 已包含 Auto CR 逻辑，跳过");
+        log("post-merge hook 已包含 AutoCR 逻辑，跳过");
         return true;
       }
     } else {
