@@ -1,7 +1,7 @@
 # AutoCR
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/auto-cr/auto-cr)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/ApolloNaco/auto-cr/blob/master/package.json)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/ApolloNaco/auto-cr/blob/master/LICENSE)
 
 一个面向 Cursor 的 VSCode 扩展，在 Git **commit** 或 **merge** 到 master/main 后自动触发 Cursor Agent 代码审查。支持自定义审查模板、排除规则与报告目录，让每次提交都可选地经过 AI 审查并生成报告。
 
@@ -179,7 +179,7 @@ A: 可以。若未安装 post-commit hook，扩展会通过轮询 HEAD 等方式
 
 ## 📄 许可证
 
-[MIT License](LICENSE)
+[MIT License](https://github.com/ApolloNaco/auto-cr/blob/master/LICENSE)
 
 ## 👨‍💻 作者
 
@@ -193,7 +193,7 @@ A: 可以。若未安装 post-commit hook，扩展会通过轮询 HEAD 等方式
 
 ## 📧 反馈与支持
 
-如有问题或建议，欢迎在仓库中提交 [Issue](https://github.com/auto-cr/auto-cr/issues) 或 [Pull Request](https://github.com/auto-cr/auto-cr/pulls)，或在掘金留言交流。
+如有问题或建议，欢迎在仓库中提交 [Issue](https://github.com/ApolloNaco/auto-cr/issues) 或 [Pull Request](https://github.com/ApolloNaco/auto-cr/pulls)，或在掘金留言交流。
 
 ---
 
