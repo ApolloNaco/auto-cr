@@ -120,7 +120,9 @@
   },
   "scripts": {
     "compile": "tsc -p .",
-    "watch": "tsc -p . -w"
+    "watch": "tsc -p . -w",
+    "package": "npm run compile && npx @vscode/vsce package --no-dependencies",
+    "publish:marketplace": "npm run compile && npx @vscode/vsce publish --no-dependencies"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
