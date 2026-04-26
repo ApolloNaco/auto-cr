@@ -1,0 +1,247 @@
+[
+  {
+    "rule_id": "java_empty_catch_all",
+    "title": "catch(Exception/Throwable) 为空或仅打印日志（可能吞异常）",
+    "severity": "critical",
+    "category": "logic",
+    "scope": "java",
+    "trigger": {
+      "type": "javaAstQuery",
+      "query": "(\n+  (catch_clause\n+    (catch_formal_parameter\n+      (type_identifier) @t\n+    )\n+    (block) @hit\n+  )\n+  (#match? @t \"^(Exception|Throwable)$\")\n+)"
+    },
+    "evidence": { "requireSnippet": true, "maxSnippetLines": 6 },
+    "suggestion": "不要吞异常；至少记录关键上下文并重新抛出或转换为业务异常。"
+  },
+  {
+    "rule_id": "java_runtime_exec",
+    "title": "使用 Runtime.exec / ProcessBuilder（高危执行）",
+    "severity": "critical",
+    "category": "security",
+    "scope": "java",
+    "trigger": {
+      "type": "diffRegex",
+      "pattern": "\\\\bRuntime\\\\.getRuntime\\\\(\\\\)\\\\.exec\\\\s*\\\\(|\\\\bnew\\\\s+ProcessBuilder\\\\s*\\\\(",
+      "flags": "i",
+      "addedLinesOnly": true
+    },
+    "evidence": { "requireSnippet": true, "maxSnippetLines": 8 },
+    "suggestion": "检查参数是否来自用户输入；避免 shell 拼接；使用白名单并做转义。"
+  },
+  {
+    "rule_id": "java_resource_not_try_with_resources",
+    "title": "疑似资源创建但未使用 try-with-resources（可能泄漏）",
+    "severity": "critical",
+    "category": "performance",
+    "scope": "java",
+    "trigger": {
+      "type": "javaCfgCheck",
+      "checkId": "resource_not_try_with_resources"
+    },
+    "evidence": { "requireSnippet": true, "maxSnippetLines": 10 },
+    "suggestion": "优先改为 try-with-resources；或确保所有路径都能 close（finally）并避免在异常路径泄漏。"
+  },
+  {
+    "rule_id": "java_catch_without_rethrow",
+    "title": "catch 后未 rethrow/未返回错误（可能吞异常导致状态不一致）",
+    "severity": "critical",
+    "category": "logic",
+    "scope": "java",
+    "trigger": {
+      "type": "javaCfgCheck",
+      "checkId": "catch_without_rethrow"
+    },
+    "evidence": { "requireSnippet": true, "maxSnippetLines": 12 },
+    "suggestion": "明确异常策略：记录关键上下文并 rethrow，或转换为业务异常/错误码并停止后续流程。"
+  },
+  {
+    "rule_id": "java_sql_concat",
+    "title": "疑似 SQL 字符串拼接（潜在注入风险）",
+    "severity": "critical",
+    "category": "security",
+    "scope": "java",
+    "trigger": {
+      "type": "diffRegex",
+      "pattern": "(select|update|delete|insert)\\\\b[^\\\"]*\\\\\"\\\\s*\\\\+|\\\\+\\\\s*\\\\\"\\\\s*(where|and|or)\\\\b",
+      "flags": "i",
+      "addedLinesOnly": false
+    },
+    "evidence": { "requireSnippet": true, "maxSnippetLines": 8 },
+    "suggestion": "改为参数化查询/预编译语句；禁止拼接用户可控字段进入 SQL。"
+  },
+  {
+    "rule_id": "java_redundant_if_else_return_boolean",
+    "title": "冗余 if/else：两分支仅返回 true/false（可简化）",
+    "severity": "critical",
+    "category": "logic",
+    "scope": "java",
+    "trigger": {
+      "type": "javaAstQuery",
+      "query": "(\n+  (if_statement\n+    condition: (_) @cond\n+    consequence: (return_statement (true))\n+    alternative: (else_clause (return_statement (false)))\n+  ) @hit\n+)\n+(\n+  (if_statement\n+    condition: (_) @cond\n+    consequence: (return_statement (false))\n+    alternative: (else_clause (return_statement (true)))\n+  ) @hit\n+)"
+    },
+    "evidence": { "requireSnippet": true, "maxSnippetLines": 8 },
+    "suggestion": "可简化：`if (cond) return true; else return false;` → `return cond;`；反之 → `return !cond;`。同时注意 cond 是否有副作用。"
+  },
+  {
+    "rule_id": "properties_sensitive_key",
+    "title": ".properties 出现疑似敏感 key（password/secret/token 等）",
+    "severity": "critical",
+    "category": "security",
+    "scope": "properties",
+    "trigger": {
+      "type": "propertiesKeyRegex",
+      "pattern": "(password|passwd|pwd|secret|token|api[_-]?key|access[_-]?key|private[_-]?key)",
+      "flags": "i"
+    },
+    "evidence": { "requireSnippet": true, "maxSnippetLines": 1 },
+    "suggestion": "敏感配置不要明文入库；使用密钥管理/环境变量/加密配置，并避免提交到仓库。"
+  },
+  {
+    "rule_id": "xml_cleartext_http_url",
+    "title": "XML 中出现明文 http URL（可能导致明文传输/环境不一致）",
+    "severity": "critical",
+    "category": "security",
+    "scope": "xml",
+    "trigger": {
+      "type": "fileRegex",
+      "pattern": "http:\\\\/\\\\/",
+      "flags": "i"
+    },
+    "evidence": { "requireSnippet": true, "maxSnippetLines": 2 },
+    "suggestion": "优先使用 https；或把域名/环境差异放入统一配置与拼接方法，避免硬编码。"
+  },
+  {
+    "rule_id": "xml_webview_js_enabled",
+    "title": "WebView 启用 JavaScript（需评估 XSS/注入面）",
+    "severity": "critical",
+    "category": "security",
+    "scope": "xml",
+    "trigger": {
+      "type": "xmlAttributeRegex",
+      "pattern": "android:javaScriptEnabled\\\\s*=\\\\s*\\\"true\\\"",
+      "flags": "i"
+    },
+    "evidence": { "requireSnippet": true, "maxSnippetLines": 1 },
+    "suggestion": "确认 WebView 内容来源可信；禁用 file 访问、限制 JS 接口暴露，并加固 URL 加载策略。"
+  },
+  {
+    "rule_id": "xml_mybatis_dollar_substitution",
+    "title": "MyBatis XML 使用 ${}（高危，可能 SQL 注入）",
+    "severity": "critical",
+    "category": "security",
+    "scope": "xml",
+    "trigger": {
+      "type": "diffRegex",
+      "pattern": "\\\\$\\\\{[^}]+\\\\}",
+      "flags": "m",
+      "addedLinesOnly": false
+    },
+    "evidence": { "requireSnippet": true, "maxSnippetLines": 3 },
+    "suggestion": "避免使用 `${}` 拼接 SQL；优先使用 `#{}` 参数化或白名单拼接（例如排序字段）。"
+  },
+  {
+    "rule_id": "java_spring_cors_allowedOrigins_star",
+    "title": "Spring CORS 允许所有来源（allowedOrigins(\"*\") / origins=\"*\")",
+    "severity": "critical",
+    "category": "security",
+    "scope": "java",
+    "trigger": {
+      "type": "diffRegex",
+      "pattern": "allowedOrigins\\\\s*\\\\(\\\\s*\\\"\\\\*\\\"\\\\s*\\\\)|@CrossOrigin\\\\([^)]*\\\"\\\\*\\\"",
+      "flags": "i",
+      "addedLinesOnly": false
+    },
+    "evidence": { "requireSnippet": true, "maxSnippetLines": 6 },
+    "suggestion": "生产环境避免 `*`；改为明确白名单域名，并配合环境配置区分 dev/prod。"
+  },
+  {
+    "rule_id": "java_spring_cors_allowCredentials_true",
+    "title": "Spring CORS 允许携带凭证（allowCredentials(true)）",
+    "severity": "critical",
+    "category": "security",
+    "scope": "java",
+    "trigger": {
+      "type": "diffRegex",
+      "pattern": "allowCredentials\\\\s*\\\\(\\\\s*true\\\\s*\\\\)",
+      "flags": "i",
+      "addedLinesOnly": false
+    },
+    "evidence": { "requireSnippet": true, "maxSnippetLines": 4 },
+    "suggestion": "若同时允许所有来源（`*`）将非常危险；建议仅对受信任域名开启，并评估 Cookie/Token 的跨域风险。"
+  },
+  {
+    "rule_id": "java_thread_sleep",
+    "title": "使用 Thread.sleep（可能阻塞线程/引发性能问题）",
+    "severity": "critical",
+    "category": "performance",
+    "scope": "java",
+    "trigger": {
+      "type": "diffRegex",
+      "pattern": "\\\\bThread\\\\.sleep\\\\s*\\\\(",
+      "flags": "i",
+      "addedLinesOnly": true
+    },
+    "evidence": { "requireSnippet": true, "maxSnippetLines": 4 },
+    "suggestion": "避免在请求线程中 sleep；若用于重试/限流请改为调度器/异步机制/指数退避，并考虑超时与中断处理。"
+  },
+  {
+    "rule_id": "java_new_objectmapper",
+    "title": "频繁 new ObjectMapper（可复用单例，避免性能开销与配置分裂）",
+    "severity": "critical",
+    "category": "performance",
+    "scope": "java",
+    "trigger": {
+      "type": "diffRegex",
+      "pattern": "\\\\bnew\\\\s+ObjectMapper\\\\s*\\\\(",
+      "flags": "i",
+      "addedLinesOnly": false
+    },
+    "evidence": { "requireSnippet": true, "maxSnippetLines": 6 },
+    "suggestion": "建议通过 Spring Bean 注入并复用同一个 ObjectMapper，统一模块配置（modules/日期格式/命名策略等）。"
+  },
+  {
+    "rule_id": "java_simpledateformat_new",
+    "title": "在运行时频繁 new SimpleDateFormat（性能差且线程不安全）",
+    "severity": "critical",
+    "category": "performance",
+    "scope": "java",
+    "trigger": {
+      "type": "diffRegex",
+      "pattern": "\\\\bnew\\\\s+SimpleDateFormat\\\\s*\\\\(",
+      "flags": "i",
+      "addedLinesOnly": false
+    },
+    "evidence": { "requireSnippet": true, "maxSnippetLines": 6 },
+    "suggestion": "优先使用 `java.time`（DateTimeFormatter）或复用线程安全的 formatter，避免在热路径频繁创建对象。"
+  },
+  {
+    "rule_id": "java_optional_get",
+    "title": "直接调用 Optional.get（可能抛 NoSuchElementException）",
+    "severity": "critical",
+    "category": "logic",
+    "scope": "java",
+    "trigger": {
+      "type": "diffRegex",
+      "pattern": "\\\\bOptional<[^>]+>\\\\b|\\\\.get\\\\s*\\\\(\\\\s*\\\\)",
+      "flags": "i",
+      "addedLinesOnly": true
+    },
+    "evidence": { "requireSnippet": true, "maxSnippetLines": 6 },
+    "suggestion": "避免直接 `get()`；改用 `orElseThrow`/`orElse`/`ifPresent`，并给出明确异常或默认值。"
+  },
+  {
+    "rule_id": "java_equals_ignorecase_on_nullable",
+    "title": "对可能为 null 的字符串调用 equals/equalsIgnoreCase（空指针风险）",
+    "severity": "critical",
+    "category": "logic",
+    "scope": "java",
+    "trigger": {
+      "type": "diffRegex",
+      "pattern": "\\\\b\\\\w+\\\\.equalsIgnoreCase\\\\s*\\\\(|\\\\b\\\\w+\\\\.equals\\\\s*\\\\(\\\"",
+      "flags": "i",
+      "addedLinesOnly": false
+    },
+    "evidence": { "requireSnippet": true, "maxSnippetLines": 6 },
+    "suggestion": "若调用方可能为 null，改为常量调用（`\"x\".equals(s)`）或使用 `Objects.equals`/提前判空。"
+  }
+]
+

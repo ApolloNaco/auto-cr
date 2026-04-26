@@ -32,6 +32,84 @@ function isGitRepo(root: string): boolean {
   return fs.existsSync(path.join(root, ".git"));
 }
 
+async function addRuleSource(
+  workspaceRoot: string,
+  kind: "file" | "directory"
+): Promise<void> {
+  const picker =
+    kind === "file"
+      ? await vscode.window.showOpenDialog({
+          canSelectFiles: true,
+          canSelectFolders: false,
+          canSelectMany: false,
+          defaultUri: vscode.Uri.file(workspaceRoot),
+          openLabel: "选择规则文件",
+        })
+      : await vscode.window.showOpenDialog({
+          canSelectFiles: false,
+          canSelectFolders: true,
+          canSelectMany: false,
+          defaultUri: vscode.Uri.file(workspaceRoot),
+          openLabel: "选择规则目录",
+        });
+
+  const uri = picker?.[0];
+  if (!uri) return;
+
+  const cfg = vscode.workspace.getConfiguration("autoCR");
+  const current = cfg.get<string[]>("ruleSources") || [];
+  const next = [...current];
+  if (!next.includes(uri.fsPath)) next.push(uri.fsPath);
+  await cfg.update("ruleSources", next, vscode.ConfigurationTarget.Global);
+  vscode.window.showInformationMessage(
+    `已添加规则来源：${uri.fsPath}（当前共 ${next.length} 项）`
+  );
+}
+
+async function manageRuleSources(workspaceRoot: string): Promise<void> {
+  const cfg = vscode.workspace.getConfiguration("autoCR");
+  const current = cfg.get<string[]>("ruleSources") || [];
+  const items: Array<{ label: string; detail: string; action: string }> = [
+    { label: "添加规则文件", detail: "选择一个规则 .json 文件加入 ruleSources", action: "add_file" },
+    { label: "添加规则目录", detail: "选择一个目录（加载其中所有 *.rules.json）加入 ruleSources", action: "add_dir" },
+  ];
+  if (current.length > 0) {
+    items.push(
+      { label: "移除一个规则来源", detail: "从 ruleSources 列表中删除一项", action: "remove_one" },
+      { label: "清空规则来源（回退默认）", detail: "清空 ruleSources，回退到 rules/critical.rules.json", action: "clear" }
+    );
+  }
+
+  const choice = await vscode.window.showQuickPick(items, {
+    placeHolder: "管理可执行规则来源（autoCR.ruleSources）",
+  });
+  if (!choice) return;
+
+  if (choice.action === "add_file") {
+    await addRuleSource(workspaceRoot, "file");
+    return;
+  }
+  if (choice.action === "add_dir") {
+    await addRuleSource(workspaceRoot, "directory");
+    return;
+  }
+  if (choice.action === "clear") {
+    await cfg.update("ruleSources", [], vscode.ConfigurationTarget.Global);
+    vscode.window.showInformationMessage("已清空 ruleSources，将回退默认规则集");
+    return;
+  }
+  if (choice.action === "remove_one") {
+    const picked = await vscode.window.showQuickPick(
+      current.map((p) => ({ label: p, detail: "点击移除该来源", value: p })),
+      { placeHolder: "选择要移除的规则来源" }
+    );
+    if (!picked) return;
+    const next = current.filter((p) => p !== picked.value);
+    await cfg.update("ruleSources", next, vscode.ConfigurationTarget.Global);
+    vscode.window.showInformationMessage(`已移除：${picked.value}（剩余 ${next.length} 项）`);
+  }
+}
+
 export function activate(context: vscode.ExtensionContext): void {
   const out = vscode.window.createOutputChannel("AutoCR");
   setOutputChannel(out);
@@ -135,6 +213,11 @@ export function activate(context: vscode.ExtensionContext): void {
               description: mergeOn ? "点击关闭" : "点击开启",
               detail: "merge",
             },
+            {
+              label: "管理规则来源（ruleSources）",
+              description: "添加/移除规则文件或规则目录",
+              detail: "rules",
+            },
           ],
           { placeHolder: "选择要切换的选项" }
         )
@@ -144,8 +227,12 @@ export function activate(context: vscode.ExtensionContext): void {
             c.update("onCommit.enabled", !commitOn, vscode.ConfigurationTarget.Global);
             updateStatusBar(!commitOn, mergeOn);
           } else {
-            c.update("onMerge.enabled", !mergeOn, vscode.ConfigurationTarget.Global);
-            updateStatusBar(commitOn, !mergeOn);
+            if (item.detail === "merge") {
+              c.update("onMerge.enabled", !mergeOn, vscode.ConfigurationTarget.Global);
+              updateStatusBar(commitOn, !mergeOn);
+            } else if (item.detail === "rules" && workspaceRoot) {
+              manageRuleSources(workspaceRoot);
+            }
           }
         });
     })
@@ -191,6 +278,14 @@ export function activate(context: vscode.ExtensionContext): void {
         );
         vscode.window.showInformationMessage("已设置 Commit 审查模板: " + uri[0].fsPath);
       }
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand("autoCR.manageRuleSources", async () => {
+      const root = getWorkspaceRoot();
+      if (!root) return;
+      await manageRuleSources(root);
     })
   );
 

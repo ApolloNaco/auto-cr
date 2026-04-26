@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import * as path from "path";
 import * as vscode from "vscode";
 import { showError } from "./error-notifier";
 import { getReportOutputDir } from "./command-resolver";
@@ -53,8 +54,76 @@ export function startReportWatcher(
   return disposables;
 }
 
+type PartialCat = "security" | "performance" | "logic";
+
+function parsePartialCategory(fileName: string): PartialCat | null {
+  if (fileName.endsWith("-security.md")) return "security";
+  if (fileName.endsWith("-performance.md")) return "performance";
+  if (fileName.endsWith("-logic.md")) return "logic";
+  return null;
+}
+
+function baseNameForPartial(fileName: string, cat: PartialCat): string {
+  return fileName.slice(0, -(`-${cat}.md`.length));
+}
+
+function mergeTitle(cat: PartialCat): string {
+  if (cat === "security") return "## 安全（Security）";
+  if (cat === "performance") return "## 性能（Performance）";
+  return "## 代码逻辑（Logic）";
+}
+
+const partialState = new Map<string, { rootDir: string; parts: Partial<Record<PartialCat, string>> }>();
+
+function tryMerge(baseKey: string, outputChannel: vscode.OutputChannel): void {
+  const st = partialState.get(baseKey);
+  if (!st) return;
+  const { parts, rootDir } = st;
+  if (!parts.security || !parts.performance || !parts.logic) return;
+
+  const mergedPath = path.join(rootDir, `${baseKey}.md`);
+  const merged = `# 代码审查报告（分工合并） - ${baseKey}\n\n` +
+    `${mergeTitle("security")}\n\n${parts.security}\n\n` +
+    `${mergeTitle("performance")}\n\n${parts.performance}\n\n` +
+    `${mergeTitle("logic")}\n\n${parts.logic}\n`;
+
+  try {
+    fs.writeFileSync(mergedPath, merged, "utf8");
+    outputChannel.appendLine("分工审查已合并报告: " + mergedPath);
+  } catch (e) {
+    showError("合并分工审查报告失败: " + (e instanceof Error ? e.message : String(e)), mergedPath);
+  } finally {
+    partialState.delete(baseKey);
+  }
+}
+
 function handleNewReport(uri: vscode.Uri, outputChannel: vscode.OutputChannel): void {
   const filePath = uri.fsPath;
+  const fileName = path.basename(filePath);
+
+  const cat = parsePartialCategory(fileName);
+  if (cat) {
+    // In multi-agent mode, partial reports are merged; skip normal notification flow.
+    let content: string;
+    try {
+      content = fs.readFileSync(filePath, "utf8");
+    } catch (e) {
+      showError(
+        "分片审查报告读取失败: " + (e instanceof Error ? e.message : String(e)),
+        filePath
+      );
+      return;
+    }
+    const baseKey = baseNameForPartial(fileName, cat);
+    const rootDir = path.dirname(filePath);
+    const st = partialState.get(baseKey) ?? { rootDir, parts: {} };
+    st.parts[cat] = content;
+    partialState.set(baseKey, st);
+    outputChannel.appendLine(`收到分片报告: ${cat} (${fileName})，等待合并...`);
+    tryMerge(baseKey, outputChannel);
+    return;
+  }
+
   let content: string;
   try {
     content = fs.readFileSync(filePath, "utf8");

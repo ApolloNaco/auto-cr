@@ -90,6 +90,7 @@ code --install-extension ApolloNaco.auto-cr
 | **AutoCR: Toggle Merge Auto Mode** | 切换「Merge 到 master/main 时审查」开关 |
 | **AutoCR: Trigger Review Now** | 对当前 HEAD 立即触发一次审查 |
 | **AutoCR: Select Review Template** | 选择自定义审查模板文件 |
+| **AutoCR: Manage Rule Sources** | 管理可执行规则来源（添加/移除规则文件或规则目录） |
 
 ## ⚙️ 配置选项
 

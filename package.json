@@ -107,6 +107,17 @@
           "type": "boolean",
           "default": true,
           "description": "是否自动排除单元测试文件"
+        },
+        "autoCR.ruleSources": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "规则来源列表：可填规则文件路径或规则目录路径。支持绝对路径与相对工作区路径；目录会加载其中所有 *.rules.json。留空则默认使用 rules/critical.rules.json"
+        },
+        "autoCR.multiAgent.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "是否启用三 Agent 分工审查（安全/性能/逻辑）。开启后会顺序触发 3 次审查并自动合并报告"
         }
       }
     },
@@ -115,7 +126,8 @@
       { "command": "autoCR.toggleCommitMode", "title": "AutoCR: Toggle Commit Auto Mode" },
       { "command": "autoCR.toggleMergeMode", "title": "AutoCR: Toggle Merge Auto Mode" },
       { "command": "autoCR.triggerReviewNow", "title": "AutoCR: Trigger Review Now" },
-      { "command": "autoCR.selectReviewTemplate", "title": "AutoCR: Select Review Template" }
+      { "command": "autoCR.selectReviewTemplate", "title": "AutoCR: Select Review Template" },
+      { "command": "autoCR.manageRuleSources", "title": "AutoCR: Manage Rule Sources" }
     ]
   },
   "scripts": {
@@ -123,6 +135,10 @@
     "watch": "tsc -p . -w",
     "package": "npm run compile && npx @vscode/vsce package --no-dependencies",
     "publish:marketplace": "npm run compile && npx @vscode/vsce publish --no-dependencies"
+  },
+  "dependencies": {
+    "tree-sitter": "^0.21.1",
+    "tree-sitter-java": "^0.23.4"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
